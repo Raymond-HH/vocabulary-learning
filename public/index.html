@@ -69,7 +69,7 @@
       box-shadow:0 4px 24px rgba(0,0,0,.3); transition:all .2s; position:relative;
     }
     .card .badge { position:absolute; top:12px; right:12px; font-size:11px; padding:3px 8px; border-radius:6px; background:#334155; color:#94a3b8; }
-    .card .word { font-size:30px; font-weight:700; color:#f8fafc; margin-bottom:6px; }
+    .card .word { font-size:30px; font-weight:700; color:#f8fafc; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
     .card .phonetic { font-size:17px; color:#64748b; margin-bottom:4px; }
     .card .pos { font-size:13px; color:#475569; margin-bottom:14px; }
     .card .tags { display:flex; gap:6px; flex-wrap:wrap; }
@@ -95,6 +95,25 @@
 
     .score-labels { display:flex; gap:8px; justify-content:center; margin-top:8px; }
     .score-labels span { width:56px; text-align:center; font-size:10px; color:#64748b; }
+
+    /* Audio button */
+    .audio-btn {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border:none; border-radius:8px;
+      background:#334155; color:#60a5fa; font-size:18px;
+      cursor:pointer; transition:all .15s; flex-shrink:0;
+    }
+    .audio-btn:hover { background:#475569; }
+    .audio-btn:active { transform:scale(.9); }
+
+    /* Replay button */
+    .replay-row { text-align:center; margin-bottom:16px; }
+    .replay-btn {
+      padding:10px 24px; border:1px solid #3b82f6; border-radius:10px;
+      background:#1e3a5f; color:#60a5fa; font-size:14px; font-weight:500;
+      cursor:pointer; transition:all .15s;
+    }
+    .replay-btn:hover { background:#1e4a7a; }
 
     /* ===== Fill-in-blank ===== */
     .fib-sentence { font-size:20px; line-height:1.8; color:#f8fafc; margin-bottom:24px; }
@@ -275,6 +294,29 @@
       dictation:'🎧 听写拼写', spelling:'🔤 拼写补全'
     };
 
+    /* ===== Audio ===== */
+    function playAudio(text) {
+      if (!text) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1;
+      // Try to pick an English voice
+      const voices = window.speechSynthesis.getVoices();
+      const enVoice = voices.find(v => v.lang.startsWith('en'));
+      if (enVoice) u.voice = enVoice;
+      window.speechSynthesis.speak(u);
+    }
+    // Preload voices
+    if (window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    function audioBtnHTML(word) {
+      return `<button class="audio-btn" title="播放发音" onclick="event.stopPropagation();playAudio('${word.replace(/'/g,"\\'")}')">🔊</button>`;
+    }
+
+    /* ===== Mode / Navigation ===== */
     function selectMode(m) {
       mode = m;
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===m));
@@ -285,9 +327,7 @@
       if (document.getElementById('review').classList.contains('active')) {
         if (mode==='flashcard' && !revealed && (e.code==='Space'||e.code==='Enter')) { e.preventDefault(); reveal(); }
         if (mode==='flashcard' && revealed && e.key>='1' && e.key<='5') selfScore(+e.key);
-        if ((mode==='dictation'||mode==='spelling') && !quizDone) {
-          if (e.code==='Enter') checkInput();
-        }
+        if ((mode==='dictation'||mode==='spelling') && !quizDone && e.code==='Enter') checkInput();
         if (quizDone && e.code==='Enter') { e.preventDefault(); nextWord(); }
       }
       if (e.code==='Escape') goHome();
@@ -302,14 +342,12 @@
     async function loadStats() {
       const s = await api('/api/stats');
       document.getElementById('subtitle').textContent = `${s.total} 词 · ${s.newW} 个新词 · ${s.overdue} 个超期`;
-
       const grid = document.getElementById('statsGrid');
       grid.innerHTML = `
         <div class="stat-card overdue"><div class="num">${s.overdue}</div><div class="label">超期未复习</div></div>
         <div class="stat-card new"><div class="num">${s.newW}</div><div class="label">新词待学</div></div>
         <div class="stat-card mastered"><div class="num">${s.l3+s.l4+s.l5+s.l6}</div><div class="label">已掌握(L3+)</div></div>
       `;
-
       const bar = document.getElementById('masteryBar');
       const total = s.total || 1;
       const colors = ['#334155','#ef4444','#ea580c','#ca8a04','#22c55e','#16a34a','#2563eb','#1d4ed8'];
@@ -371,7 +409,7 @@
         });
 
         content.innerHTML = `
-          <div class="word">${w.word}</div>
+          <div class="word">${w.word} ${audioBtnHTML(w.word)}</div>
           <div class="phonetic">${w.phonetic||''}</div>
           <div class="pos">${w.pos||''}</div>
           <div class="tags">${tagsHtml}</div>
@@ -401,6 +439,8 @@
     function reveal() {
       if (revealed) return;
       revealed = true;
+      const w = words[idx];
+      playAudio(w.word);
       const ans = document.getElementById('cAnswer');
       if (ans) ans.classList.remove('hidden');
       const hint = document.getElementById('hint');
@@ -454,6 +494,7 @@
           <div class="def-hint">${fmtText(w.definition)}</div>
         `;
         quizArea.innerHTML = `
+          <div class="replay-row">${audioBtnHTML(w.word)} <span style="font-size:13px;color:#64748b;margin-left:8px;">听发音</span></div>
           <div class="fib-hint">该词暂无例句，请根据释义输入单词</div>
           <div class="input-area">
             <input type="text" class="word-input" id="fibInput" autocomplete="off" autocapitalize="none" spellcheck="false">
@@ -469,6 +510,7 @@
       const blankHtml = makeBlank(sentence, w.word);
 
       content.innerHTML = `
+        <div class="replay-row">${audioBtnHTML(w.word)}</div>
         <div class="def-hint" style="font-size:14px;color:#64748b;margin-bottom:16px;">${w.pos||''}${w.pos?' · ':''}${w.phonetic||''}</div>
         <div class="fib-sentence">${blankHtml}</div>
         <div class="def-hint" style="font-size:14px;color:#64748b;margin-bottom:8px;">${fmtText(w.definition).substring(0,120)}</div>
@@ -480,6 +522,8 @@
         </div>
         <div class="result-msg" id="fibResult"></div>
       `;
+      // Auto-play audio
+      setTimeout(() => playAudio(w.word), 200);
     }
 
     async function pickOption(btn, chosen) {
@@ -500,6 +544,9 @@
       const r = await api('/api/review', { recordId: w.recordId, score, currentMasteryIndex: w.masteryIndex });
       results.push({ word: w.word, score, newLevel: r.newMasteryLevel || '' });
 
+      // Play correct word audio
+      playAudio(correctAnswer);
+
       const msg = document.getElementById('fibResult');
       msg.className = 'result-msg ' + (isCorrect ? 'correct' : 'wrong');
       msg.textContent = isCorrect ? '✅ 正确！' : `❌ 正确答案：${correctAnswer}`;
@@ -519,6 +566,10 @@
       `;
 
       quizArea.innerHTML = `
+        <div class="replay-row">
+          ${audioBtnHTML(w.word)}
+          <span style="font-size:13px;color:#64748b;margin-left:8px;">点击听发音（可多次）</span>
+        </div>
         <div class="input-area">
           <input type="text" class="word-input" id="dictInput" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入单词...">
           <button class="submit-btn" id="dictSubmit" onclick="checkDictation()">确认</button>
@@ -530,6 +581,8 @@
           <button class="next-btn" onclick="nextWord()">下一个 →</button>
         </div>
       `;
+      // Auto-play audio after a brief delay
+      setTimeout(() => playAudio(w.word), 300);
       setTimeout(() => { const inp = document.getElementById('dictInput'); if(inp) inp.focus(); }, 100);
     }
 
@@ -552,6 +605,9 @@
       const msg = document.getElementById('dictResult');
       msg.className = 'result-msg ' + (score >= 3 ? 'correct' : 'wrong');
       msg.textContent = score >= 5 ? '✅ 完全正确！' : score >= 3 ? '⚠️ 接近了' : '❌ 不对';
+
+      // Play correct word audio
+      playAudio(correctAnswer);
 
       document.getElementById('dictAnswerWord').textContent = correctAnswer;
       document.getElementById('dictAnswerPhonetic').textContent = `${w.phonetic||''} ${w.pos||''}`;
@@ -589,6 +645,7 @@
       const def = fmtText(w.definition);
 
       content.innerHTML = `
+        <div class="replay-row">${audioBtnHTML(w.word)}</div>
         <div class="def-hint">${def}</div>
         <div class="letter-hint">${masked}</div>
         <div class="phonetic-hint">${w.phonetic||''} ${w.pos||''}</div>
@@ -628,6 +685,9 @@
       msg.className = 'result-msg ' + (score >= 3 ? 'correct' : 'wrong');
       msg.textContent = score >= 5 ? '✅ 完全正确！' : score >= 3 ? '⚠️ 接近了' : '❌ 不对';
 
+      // Play correct word audio
+      playAudio(correctAnswer);
+
       document.getElementById('spellAnswerWord').textContent = correctAnswer;
       document.getElementById('spellAnswer').classList.remove('hidden');
 
@@ -648,7 +708,6 @@
         if (diff===1) return 4;
         if (diff===2) return 3;
       }
-      // Levenshtein for different lengths
       const dist = levenshtein(answer, correct);
       if (dist===1) return 4;
       if (dist===2) return 3;

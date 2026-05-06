@@ -19,6 +19,7 @@ const FN = {
   wordFamily:'wordFamily', category:'category', difficulty:'difficulty',
   masteryLevel:'masteryLevel', reviewCount:'reviewCount',
   averageScore:'averageScore', nextReview:'nextReview',
+  audioUrl:'发音音频',
 };
 
 const LEVELS = ['L0-陌生 (0%)','L1-了解 (10%)','L2-认识 (25%)','L3-熟悉 (50%)','L4-掌握 (75%)','L5-熟练 (90%)','L6-精通 (100%)'];
@@ -90,6 +91,7 @@ function invalidateCache() { cache = null; }
 
 function formatWord(rec) {
   const ml = rec[FN.masteryLevel];
+  const au = rec[FN.audioUrl];
   return {
     recordId:rec._id, word:rec[FN.word]||'', phonetic:rec[FN.phonetic]||'',
     pos:rec[FN.pos]||'', definition:rec[FN.definition]||'', examples:rec[FN.examples]||'',
@@ -99,6 +101,7 @@ function formatWord(rec) {
     masteryLevel: ml ? (Array.isArray(ml)?ml.join(', '):ml) : '',
     masteryIndex: getLevelIdx(ml),
     reviewCount: rec[FN.reviewCount]||0, averageScore:rec[FN.averageScore]||0,
+    audioUrl: au ? (Array.isArray(au)?au.map(f=>f.url||f).find(u=>u):au) : '',
   };
 }
 
