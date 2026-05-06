@@ -8,7 +8,6 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
 
-    /* ===== Dashboard ===== */
     .dashboard { max-width:600px; margin:0 auto; padding:24px 16px; }
     .dashboard h1 { font-size:22px; margin-bottom:4px; }
     .dashboard .subtitle { color:#64748b; font-size:14px; margin-bottom:24px; }
@@ -24,7 +23,6 @@
     .mastery-bar { display:flex; gap:2px; margin-bottom:24px; border-radius:8px; overflow:hidden; height:8px; }
     .mastery-bar div { height:100%; }
 
-    /* Mode selector */
     .mode-section { margin-bottom:20px; }
     .mode-section .label { font-size:13px; color:#64748b; margin-bottom:10px; text-transform:uppercase; letter-spacing:.5px; }
     .mode-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
@@ -49,7 +47,6 @@
     .action-btn .title { display:block; }
     .action-btn .desc { display:block; font-size:13px; color:#64748b; margin-top:4px; }
 
-    /* ===== Review Screen ===== */
     .review { display:none; flex-direction:column; align-items:center; min-height:100vh; padding:16px; }
     .review.active { display:flex; }
 
@@ -62,7 +59,6 @@
 
     .mode-indicator { font-size:12px; color:#3b82f6; background:#1e3a5f; padding:3px 10px; border-radius:6px; margin-bottom:12px; }
 
-    /* Card base */
     .card {
       width:100%; max-width:600px; background:#1e293b; border-radius:16px;
       padding:40px 28px; margin-bottom:20px;
@@ -96,7 +92,8 @@
     .score-labels { display:flex; gap:8px; justify-content:center; margin-top:8px; }
     .score-labels span { width:56px; text-align:center; font-size:10px; color:#64748b; }
 
-    /* Audio button */
+    /* Audio controls */
+    .audio-controls { display:flex; align-items:center; gap:8px; }
     .audio-btn {
       display:inline-flex; align-items:center; justify-content:center;
       width:36px; height:36px; border:none; border-radius:8px;
@@ -104,18 +101,19 @@
       cursor:pointer; transition:all .15s; flex-shrink:0;
     }
     .audio-btn:hover { background:#475569; }
-    .audio-btn:active { transform:scale(.9); }
+    .audio-btn.playing { background:#1e3a5f; animation:glow 1s infinite; }
+    @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.4)} 50%{box-shadow:0 0 0 6px rgba(59,130,246,0)} }
 
-    /* Replay button */
-    .replay-row { text-align:center; margin-bottom:16px; }
-    .replay-btn {
-      padding:10px 24px; border:1px solid #3b82f6; border-radius:10px;
-      background:#1e3a5f; color:#60a5fa; font-size:14px; font-weight:500;
+    .speed-btn {
+      padding:4px 10px; border:1px solid #475569; border-radius:6px;
+      background:transparent; color:#94a3b8; font-size:12px;
       cursor:pointer; transition:all .15s;
     }
-    .replay-btn:hover { background:#1e4a7a; }
+    .speed-btn.active { border-color:#3b82f6; color:#60a5fa; background:#1e3a5f; }
 
-    /* ===== Fill-in-blank ===== */
+    .replay-row { text-align:center; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .replay-text { font-size:13px; color:#64748b; }
+
     .fib-sentence { font-size:20px; line-height:1.8; color:#f8fafc; margin-bottom:24px; }
     .fib-sentence .blank { display:inline-block; border-bottom:2px solid #3b82f6; min-width:100px; padding:0 8px; color:#3b82f6; font-weight:600; }
 
@@ -132,7 +130,6 @@
 
     .fib-hint { text-align:center; color:#64748b; font-size:14px; margin-top:8px; }
 
-    /* ===== Dictation / Spelling input ===== */
     .input-area { display:flex; gap:10px; justify-content:center; margin-bottom:16px; }
     .word-input {
       padding:14px 20px; border:2px solid #334155; border-radius:12px;
@@ -166,7 +163,6 @@
     }
     .next-btn:hover { background:#475569; }
 
-    /* ===== Summary ===== */
     .summary { display:none; max-width:600px; margin:0 auto; padding:40px 16px; text-align:center; }
     .summary.active { display:block; }
     .summary h2 { font-size:28px; margin-bottom:8px; }
@@ -177,9 +173,7 @@
     .summary .item .score { font-weight:600; }
 
     .hidden { display:none!important; }
-    .loading { display:flex; align-items:center; justify-content:center; height:200px; color:#475569; font-size:16px; }
 
-    /* ===== Responsive ===== */
     @media (max-width:480px) {
       .stats-grid { grid-template-columns:repeat(2,1fr); }
       .mode-row { grid-template-columns:repeat(2,1fr); }
@@ -194,34 +188,22 @@
   </style>
 </head>
 <body>
-  <!-- Dashboard -->
   <div class="dashboard" id="dashboard">
     <h1>AutoEnglish 词汇学习</h1>
     <p class="subtitle" id="subtitle">Loading...</p>
-
     <div class="stats-grid" id="statsGrid"></div>
     <div class="mastery-bar" id="masteryBar"></div>
 
-    <!-- Mode selector -->
     <div class="mode-section">
       <div class="label">学习模式</div>
       <div class="mode-row">
-        <button class="mode-btn active" data-mode="flashcard" onclick="selectMode('flashcard')">
-          <span class="icon">🃏</span>闪卡
-        </button>
-        <button class="mode-btn" data-mode="fillblank" onclick="selectMode('fillblank')">
-          <span class="icon">📝</span>填空
-        </button>
-        <button class="mode-btn" data-mode="dictation" onclick="selectMode('dictation')">
-          <span class="icon">🎧</span>听写
-        </button>
-        <button class="mode-btn" data-mode="spelling" onclick="selectMode('spelling')">
-          <span class="icon">🔤</span>拼写
-        </button>
+        <button class="mode-btn active" data-mode="flashcard" onclick="selectMode('flashcard')"><span class="icon">🃏</span>闪卡</button>
+        <button class="mode-btn" data-mode="fillblank" onclick="selectMode('fillblank')"><span class="icon">📝</span>填空</button>
+        <button class="mode-btn" data-mode="dictation" onclick="selectMode('dictation')"><span class="icon">🎧</span>听写</button>
+        <button class="mode-btn" data-mode="spelling" onclick="selectMode('spelling')"><span class="icon">🔤</span>拼写</button>
       </div>
     </div>
 
-    <!-- Word source buttons -->
     <div class="actions">
       <button class="action-btn primary" onclick="startSession('daily')">
         <span class="title">📚 今日学习计划</span>
@@ -242,23 +224,19 @@
     </div>
   </div>
 
-  <!-- Review screen -->
   <div class="review" id="review">
     <div class="review-header">
       <button class="back" onclick="goHome()">← 返回</button>
       <span class="progress" id="progress"></span>
     </div>
     <div class="progress-track"><div class="fill" id="progressFill"></div></div>
-
     <div class="mode-indicator" id="modeIndicator"></div>
 
-    <!-- Card content area -->
     <div class="card" id="card">
       <div class="badge" id="badge"></div>
       <div id="cardContent"></div>
     </div>
 
-    <!-- Score area (flashcard) -->
     <div id="scoreArea" class="hidden">
       <div class="score-row">
         <button class="score-btn s1" onclick="selfScore(1)">1</button>
@@ -272,11 +250,9 @@
       </div>
     </div>
 
-    <!-- Interactive quiz area (fillblank/dictation/spelling) -->
     <div id="quizArea" class="hidden"></div>
   </div>
 
-  <!-- Summary -->
   <div class="summary" id="summary">
     <h2>本轮完成</h2>
     <div class="avg" id="avgScore"></div>
@@ -286,34 +262,87 @@
   </div>
 
   <script>
-    let mode = 'flashcard', words=[], idx=0, revealed=false, results=[];
-    let quizDone = false, correctAnswer = '';
+    let mode='flashcard', words=[], idx=0, revealed=false, results=[];
+    let quizDone=false, correctAnswer='';
+    let audioCache = {}; // word -> audio URL
 
     const MODE_NAMES = {
       flashcard:'🃏 闪卡模式', fillblank:'📝 选词填空',
       dictation:'🎧 听写拼写', spelling:'🔤 拼写补全'
     };
 
-    /* ===== Audio ===== */
-    function playAudio(text) {
-      if (!text) return;
+    /* ===== Audio: real pronunciation via Free Dictionary API ===== */
+    async function getAudioUrl(word) {
+      if (audioCache[word]) return audioCache[word];
+      try {
+        const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (!r.ok) return null;
+        const data = await r.json();
+        if (!Array.isArray(data) || !data[0]) return null;
+        // Find the first audio URL with "us" or any English audio
+        for (const phon of data[0].phonetics || []) {
+          if (phon.audio && (phon.audio.includes('us') || phon.audio.includes('.mp3') || phon.audio.includes('.ogg'))) {
+            audioCache[word] = phon.audio;
+            return phon.audio;
+          }
+        }
+        // Fallback: first available audio
+        for (const phon of data[0].phonetics || []) {
+          if (phon.audio) { audioCache[word] = phon.audio; return phon.audio; }
+        }
+      } catch(e) {}
+      return null;
+    }
+
+    let currentAudio = null, currentPlayback = null;
+
+    async function playAudio(word) {
+      if (!word) return;
+      // Stop any current playback
+      if (currentPlayback) { try { currentPlayback.pause(); currentPlayback.currentTime=0; } catch{} }
       window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1;
-      // Try to pick an English voice
+
+      // Try to get real audio URL
+      const url = await getAudioUrl(word);
+      if (url) {
+        currentPlayback = new Audio(url);
+        currentPlayback.playbackRate = audioSpeed;
+        try { await currentPlayback.play(); } catch(e) { console.log('audio play failed, fallback to TTS'); ttsFallback(word); return; }
+        return;
+      }
+      // Fallback to TTS
+      ttsFallback(word);
+    }
+
+    function ttsFallback(word) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(word);
+      u.lang = 'en-US'; u.rate = audioSpeed * 0.85; u.pitch = 1;
       const voices = window.speechSynthesis.getVoices();
-      const enVoice = voices.find(v => v.lang.startsWith('en'));
-      if (enVoice) u.voice = enVoice;
+      const en = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'));
+      if (en) u.voice = en;
       window.speechSynthesis.speak(u);
     }
-    // Preload voices
+
     if (window.speechSynthesis) {
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
 
-    function audioBtnHTML(word) {
-      return `<button class="audio-btn" title="播放发音" onclick="event.stopPropagation();playAudio('${word.replace(/'/g,"\\'")}')">🔊</button>`;
+    let audioSpeed = 0.75; // 75% speed for slow mode
+
+    function audioControlsHTML(word) {
+      return `<div class="audio-controls">
+        <button class="audio-btn" title="播放发音" onclick="event.stopPropagation();playAudio('${word.replace(/'/g,"\\'")}')">🔊</button>
+        <button class="speed-btn${audioSpeed<1?' active':''}" onclick="event.stopPropagation();setSpeed(this,0.75)">慢</button>
+        <button class="speed-btn${audioSpeed>=1?' active':''}" onclick="event.stopPropagation();setSpeed(this,1)">常</button>
+      </div>`;
+    }
+
+    function setSpeed(btn, speed) {
+      audioSpeed = speed;
+      btn.parentElement.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     }
 
     /* ===== Mode / Navigation ===== */
@@ -322,7 +351,6 @@
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===m));
     }
 
-    // Keyboard
     document.addEventListener('keydown', e => {
       if (document.getElementById('review').classList.contains('active')) {
         if (mode==='flashcard' && !revealed && (e.code==='Space'||e.code==='Enter')) { e.preventDefault(); reveal(); }
@@ -377,7 +405,7 @@
       return s.trim();
     }
 
-    /* ===== Flashcard mode ===== */
+    /* ===== Flashcard ===== */
     function showWord() {
       if (idx >= words.length) { showSummary(); return; }
       revealed = false; quizDone = false; correctAnswer = '';
@@ -409,7 +437,7 @@
         });
 
         content.innerHTML = `
-          <div class="word">${w.word} ${audioBtnHTML(w.word)}</div>
+          <div class="word">${w.word} ${audioControlsHTML(w.word)}</div>
           <div class="phonetic">${w.phonetic||''}</div>
           <div class="pos">${w.pos||''}</div>
           <div class="tags">${tagsHtml}</div>
@@ -459,7 +487,7 @@
       showWord();
     }
 
-    /* ===== Fill-in-blank mode ===== */
+    /* ===== Fill-in-blank ===== */
     function getSentence(w) {
       if (!w.examples) return null;
       const lines = w.examples.replace(/ --- /g, '\n').split('\n').map(l => l.trim()).filter(l => l && l.length > 10);
@@ -489,12 +517,9 @@
       const sentence = getSentence(w);
 
       if (!sentence) {
-        // Fallback: show definition and ask to type word
-        content.innerHTML = `
-          <div class="def-hint">${fmtText(w.definition)}</div>
-        `;
+        content.innerHTML = `<div class="def-hint">${fmtText(w.definition)}</div>`;
         quizArea.innerHTML = `
-          <div class="replay-row">${audioBtnHTML(w.word)} <span style="font-size:13px;color:#64748b;margin-left:8px;">听发音</span></div>
+          <div class="replay-row">${audioControlsHTML(w.word)}<span class="replay-text">听发音</span></div>
           <div class="fib-hint">该词暂无例句，请根据释义输入单词</div>
           <div class="input-area">
             <input type="text" class="word-input" id="fibInput" autocomplete="off" autocapitalize="none" spellcheck="false">
@@ -510,7 +535,7 @@
       const blankHtml = makeBlank(sentence, w.word);
 
       content.innerHTML = `
-        <div class="replay-row">${audioBtnHTML(w.word)}</div>
+        <div class="replay-row">${audioControlsHTML(w.word)}</div>
         <div class="def-hint" style="font-size:14px;color:#64748b;margin-bottom:16px;">${w.pos||''}${w.pos?' · ':''}${w.phonetic||''}</div>
         <div class="fib-sentence">${blankHtml}</div>
         <div class="def-hint" style="font-size:14px;color:#64748b;margin-bottom:8px;">${fmtText(w.definition).substring(0,120)}</div>
@@ -522,7 +547,6 @@
         </div>
         <div class="result-msg" id="fibResult"></div>
       `;
-      // Auto-play audio
       setTimeout(() => playAudio(w.word), 200);
     }
 
@@ -544,7 +568,6 @@
       const r = await api('/api/review', { recordId: w.recordId, score, currentMasteryIndex: w.masteryIndex });
       results.push({ word: w.word, score, newLevel: r.newMasteryLevel || '' });
 
-      // Play correct word audio
       playAudio(correctAnswer);
 
       const msg = document.getElementById('fibResult');
@@ -554,7 +577,7 @@
       setTimeout(() => { idx++; showWord(); }, 1500);
     }
 
-    /* ===== Dictation mode ===== */
+    /* ===== Dictation ===== */
     function setupDictation(w, content, quizArea) {
       correctAnswer = w.word;
       const def = fmtText(w.definition);
@@ -566,10 +589,7 @@
       `;
 
       quizArea.innerHTML = `
-        <div class="replay-row">
-          ${audioBtnHTML(w.word)}
-          <span style="font-size:13px;color:#64748b;margin-left:8px;">点击听发音（可多次）</span>
-        </div>
+        <div class="replay-row">${audioControlsHTML(w.word)}<span class="replay-text">点击听发音，可多次点击</span></div>
         <div class="input-area">
           <input type="text" class="word-input" id="dictInput" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入单词...">
           <button class="submit-btn" id="dictSubmit" onclick="checkDictation()">确认</button>
@@ -581,7 +601,6 @@
           <button class="next-btn" onclick="nextWord()">下一个 →</button>
         </div>
       `;
-      // Auto-play audio after a brief delay
       setTimeout(() => playAudio(w.word), 300);
       setTimeout(() => { const inp = document.getElementById('dictInput'); if(inp) inp.focus(); }, 100);
     }
@@ -606,14 +625,12 @@
       msg.className = 'result-msg ' + (score >= 3 ? 'correct' : 'wrong');
       msg.textContent = score >= 5 ? '✅ 完全正确！' : score >= 3 ? '⚠️ 接近了' : '❌ 不对';
 
-      // Play correct word audio
       playAudio(correctAnswer);
 
       document.getElementById('dictAnswerWord').textContent = correctAnswer;
       document.getElementById('dictAnswerPhonetic').textContent = `${w.phonetic||''} ${w.pos||''}`;
       document.getElementById('dictAnswer').classList.remove('hidden');
 
-      // Show definition details
       let sections = '';
       [['Definition', fmtText(w.definition)],['Examples', fmtText(w.examples)],['Collocations', fmtText(w.collocations)]].forEach(([t,c]) => {
         if (c) sections += `<div class="section" style="text-align:left;margin-top:12px;padding-top:12px;border-top:1px solid #334155;"><div class="section-title">${t}</div><div class="section-body">${c}</div></div>`;
@@ -622,17 +639,15 @@
       document.getElementById('cAnswer').classList.remove('hidden');
     }
 
-    /* ===== Spelling mode ===== */
+    /* ===== Spelling ===== */
     function maskWord(word) {
       const len = word.length;
       if (len <= 2) return { masked: word.split('').map(c => '_').join(' '), reveal: [] };
-      // Always show first and last letter
       const showCount = Math.max(2, Math.ceil(len * 0.4));
       const indices = [0, len-1];
       const available = Array.from({length:len-2}, (_,i) => i+1);
       available.sort(() => Math.random()-0.5);
       indices.push(...available.slice(0, showCount-2));
-
       return {
         masked: word.split('').map((c,i) => indices.includes(i) ? c : '_').join(' '),
         indices
@@ -645,7 +660,7 @@
       const def = fmtText(w.definition);
 
       content.innerHTML = `
-        <div class="replay-row">${audioBtnHTML(w.word)}</div>
+        <div class="replay-row">${audioControlsHTML(w.word)}</div>
         <div class="def-hint">${def}</div>
         <div class="letter-hint">${masked}</div>
         <div class="phonetic-hint">${w.phonetic||''} ${w.pos||''}</div>
@@ -685,7 +700,6 @@
       msg.className = 'result-msg ' + (score >= 3 ? 'correct' : 'wrong');
       msg.textContent = score >= 5 ? '✅ 完全正确！' : score >= 3 ? '⚠️ 接近了' : '❌ 不对';
 
-      // Play correct word audio
       playAudio(correctAnswer);
 
       document.getElementById('spellAnswerWord').textContent = correctAnswer;
