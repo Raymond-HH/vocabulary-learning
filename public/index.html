@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoEnglish 词汇学习</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+
+    /* ===== Dashboard ===== */
+    .dashboard { max-width:600px; margin:0 auto; padding:24px 16px; }
+    .dashboard h1 { font-size:22px; margin-bottom:4px; }
+    .dashboard .subtitle { color:#64748b; font-size:14px; margin-bottom:24px; }
+
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+    .stat-card { background:#1e293b; border-radius:12px; padding:16px; text-align:center; }
+    .stat-card .num { font-size:28px; font-weight:700; }
+    .stat-card .label { font-size:12px; color:#64748b; margin-top:4px; }
+    .stat-card.overdue .num { color:#ef4444; }
+    .stat-card.new .num { color:#3b82f6; }
+    .stat-card.mastered .num { color:#22c55e; }
+
+    .mastery-bar { display:flex; gap:2px; margin-bottom:24px; border-radius:8px; overflow:hidden; height:8px; }
+    .mastery-bar div { height:100%; }
+
+    .actions { display:flex; flex-direction:column; gap:12px; }
+    .action-btn {
+      padding:20px 24px; border:1px solid #334155; border-radius:14px;
+      background:#1e293b; color:#e2e8f0; font-size:16px; font-weight:500;
+      cursor:pointer; transition:all .15s; text-align:left; width:100%;
+    }
+    .action-btn:hover { background:#334155; }
+    .action-btn.primary { border-color:#3b82f6; background:#1e3a5f; }
+    .action-btn.primary:hover { background:#1e4a7a; }
+    .action-btn .title { display:block; }
+    .action-btn .desc { display:block; font-size:13px; color:#64748b; margin-top:4px; }
+
+    .streak { display:flex; align-items:center; gap:8px; padding:12px 16px; background:#1e293b; border-radius:10px; margin-bottom:24px; }
+    .streak .fire { font-size:20px; }
+    .streak .text { font-size:14px; }
+
+    /* ===== Review Screen ===== */
+    .review { display:none; flex-direction:column; align-items:center; min-height:100vh; padding:16px; }
+    .review.active { display:flex; }
+
+    .review-header { width:100%; max-width:600px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .review-header .back { background:none; border:none; color:#64748b; font-size:14px; cursor:pointer; padding:8px; }
+    .review-header .progress { font-size:14px; color:#64748b; }
+
+    .progress-track { width:100%; max-width:600px; height:4px; background:#1e293b; border-radius:2px; margin-bottom:24px; }
+    .progress-track .fill { height:100%; background:#3b82f6; border-radius:2px; transition:width .3s; }
+
+    .card {
+      width:100%; max-width:600px; background:#1e293b; border-radius:16px;
+      padding:40px 28px; margin-bottom:20px; cursor:pointer;
+      box-shadow:0 4px 24px rgba(0,0,0,.3); transition:all .2s; position:relative; min-height:200px;
+    }
+    .card:hover { box-shadow:0 8px 32px rgba(59,130,246,.15); }
+    .card.revealed { cursor:default; }
+    .card.revealed:hover { box-shadow:0 4px 24px rgba(0,0,0,.3); }
+
+    .card .badge { position:absolute; top:12px; right:12px; font-size:11px; padding:3px 8px; border-radius:6px; background:#334155; color:#94a3b8; }
+    .card .word { font-size:30px; font-weight:700; color:#f8fafc; margin-bottom:6px; }
+    .card .phonetic { font-size:17px; color:#64748b; margin-bottom:4px; }
+    .card .pos { font-size:13px; color:#475569; margin-bottom:14px; }
+    .card .tags { display:flex; gap:6px; flex-wrap:wrap; }
+    .card .tag { font-size:11px; padding:2px 8px; border-radius:5px; background:#334155; color:#cbd5e1; }
+
+    .card .answer { margin-top:24px; padding-top:20px; border-top:1px solid #334155; }
+    .card .answer .section { margin-bottom:14px; }
+    .card .answer .section-title { font-size:12px; color:#475569; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .card .answer .section-body { font-size:15px; line-height:1.7; color:#94a3b8; white-space:pre-wrap; }
+
+    .hint { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); font-size:13px; color:#475569; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+    .score-row { display:flex; gap:8px; justify-content:center; }
+    .score-btn {
+      width:56px; height:56px; border:none; border-radius:12px; font-weight:700;
+      font-size:20px; cursor:pointer; color:#fff; transition:all .12s;
+    }
+    .score-btn:active { transform:scale(.93); }
+    .score-btn:hover { opacity:.85; }
+    .s1 { background:#dc2626; } .s2 { background:#ea580c; } .s3 { background:#ca8a04; }
+    .s4 { background:#16a34a; } .s5 { background:#2563eb; }
+
+    .score-labels { display:flex; gap:8px; justify-content:center; margin-top:8px; }
+    .score-labels span { width:56px; text-align:center; font-size:10px; color:#64748b; }
+
+    /* ===== Summary ===== */
+    .summary { display:none; max-width:600px; margin:0 auto; padding:40px 16px; text-align:center; }
+    .summary.active { display:block; }
+    .summary h2 { font-size:28px; margin-bottom:8px; }
+    .summary .avg { font-size:56px; font-weight:700; color:#3b82f6; }
+    .summary .avg-label { font-size:14px; color:#64748b; margin-bottom:24px; }
+    .summary .list { text-align:left; }
+    .summary .item { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1e293b; }
+    .summary .item .score { font-weight:600; }
+
+    .hidden { display:none!important; }
+
+    .loading { display:flex; align-items:center; justify-content:center; height:200px; color:#475569; font-size:16px; }
+
+    /* ===== Responsive ===== */
+    @media (max-width:480px) {
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+      .score-btn { width:48px; height:48px; font-size:18px; }
+      .score-labels span { width:48px; }
+      .card { padding:30px 20px; }
+      .card .word { font-size:24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard" id="dashboard">
+    <h1>AutoEnglish 词汇学习</h1>
+    <p class="subtitle" id="subtitle">Loading...</p>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="mastery-bar" id="masteryBar"></div>
+
+    <div class="actions">
+      <button class="action-btn primary" onclick="startSession('daily')">
+        <span class="title">📚 今日学习计划</span>
+        <span class="desc">15个复习 + 5个新词，约15分钟</span>
+      </button>
+      <button class="action-btn" onclick="startSession('overdue')">
+        <span class="title">⚠️ 补复习（超期词）</span>
+        <span class="desc">集中复习已超期的词汇</span>
+      </button>
+      <button class="action-btn" onclick="startSession('new')">
+        <span class="title">🆕 学新词</span>
+        <span class="desc">学习还没掌握的单词</span>
+      </button>
+      <button class="action-btn" onclick="startSession('all')">
+        <span class="title">🔄 随机练习</span>
+        <span class="desc">从所有词中随机抽选</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="review" id="review">
+    <div class="review-header">
+      <button class="back" onclick="goHome()">← 返回</button>
+      <span class="progress" id="progress"></span>
+    </div>
+    <div class="progress-track"><div class="fill" id="progressFill"></div></div>
+
+    <div class="card" id="card" onclick="reveal()">
+      <div class="badge" id="badge"></div>
+      <div class="word" id="cWord"></div>
+      <div class="phonetic" id="cPhonetic"></div>
+      <div class="pos" id="cPos"></div>
+      <div class="tags" id="cTags"></div>
+      <div class="answer" id="cAnswer"></div>
+      <div class="hint" id="hint">点击显示释义</div>
+    </div>
+
+    <div id="scoreArea" class="hidden">
+      <div class="score-row">
+        <button class="score-btn s1" onclick="score(1)">1</button>
+        <button class="score-btn s2" onclick="score(2)">2</button>
+        <button class="score-btn s3" onclick="score(3)">3</button>
+        <button class="score-btn s4" onclick="score(4)">4</button>
+        <button class="score-btn s5" onclick="score(5)">5</button>
+      </div>
+      <div class="score-labels">
+        <span>忘了</span><span>困难</span><span>一般</span><span>简单</span><span>完美</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <h2>本轮完成</h2>
+    <div class="avg" id="avgScore"></div>
+    <div class="avg-label" id="avgLabel"></div>
+    <div class="list" id="resultList"></div>
+    <button class="action-btn" style="margin-top:24px;text-align:center;" onclick="goHome()">返回主页</button>
+  </div>
+
+  <script>
+    let words=[], idx=0, revealed=false, results=[];
+
+    // Keyboard: Space=reveal, 1-5=score, Esc=home
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName==='INPUT'||e.target.tagName==='BUTTON') return;
+      if (document.getElementById('review').classList.contains('active')) {
+        if (e.code==='Space' && !revealed) { e.preventDefault(); reveal(); }
+        if (revealed && e.key>='1' && e.key<='5') score(+e.key);
+      }
+      if (e.code==='Escape') goHome();
+    });
+
+    async function api(path, body) {
+      const opts = body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {};
+      const r = await fetch(path, opts);
+      return r.json();
+    }
+
+    async function loadStats() {
+      const s = await api('/api/stats');
+      document.getElementById('subtitle').textContent = `${s.total} 词 · ${s.newW} 个新词 · ${s.overdue} 个超期`;
+
+      // Stats grid
+      const grid = document.getElementById('statsGrid');
+      grid.innerHTML = `
+        <div class="stat-card overdue"><div class="num">${s.overdue}</div><div class="label">超期未复习</div></div>
+        <div class="stat-card new"><div class="num">${s.newW}</div><div class="label">新词待学</div></div>
+        <div class="stat-card mastered"><div class="num">${s.l3+s.l4+s.l5+s.l6}</div><div class="label">已掌握(L3+)</div></div>
+      `;
+
+      // Mastery bar
+      const bar = document.getElementById('masteryBar');
+      const total = s.total || 1;
+      const colors = ['#334155','#ef4444','#ea580c','#ca8a04','#22c55e','#16a34a','#2563eb','#1d4ed8'];
+      const vals = [s.newW, s.l0, s.l1, s.l2, s.l3, s.l4, s.l5, s.l6];
+      bar.innerHTML = vals.map((v,i) => `<div style="width:${v/total*100}%;background:${colors[i]}" title="${v}"></div>`).join('');
+    }
+
+    async function startSession(type) {
+      document.getElementById('dashboard').style.display='none';
+      document.getElementById('review').classList.add('active');
+      document.getElementById('summary').classList.remove('active');
+
+      const limit = type==='daily' ? 20 : 20;
+      const data = await api('/api/words', { type, limit });
+      if (!data.words || data.words.length===0) { alert('没有可学习的词汇'); goHome(); return; }
+
+      words = data.words;
+      idx = 0; results = [];
+      showWord();
+    }
+
+    // Format raw text: fix inline " --- " separators and bullet points
+    function fmtText(s) {
+      if (!s) return '';
+      // Replace " --- " between 义项 with newlines
+      s = s.replace(/ --- /g, '\n');
+      // Add blank line before each 义项
+      s = s.replace(/【义项/g, '\n\n【义项');
+      // Clean up leading/trailing whitespace
+      return s.trim();
+    }
+
+    function showWord() {
+      if (idx >= words.length) { showSummary(); return; }
+      revealed = false;
+      const w = words[idx];
+
+      document.getElementById('progress').textContent = `${idx+1} / ${words.length}`;
+      document.getElementById('progressFill').style.width = `${idx/words.length*100}%`;
+      document.getElementById('cWord').textContent = w.word;
+      document.getElementById('cPhonetic').textContent = w.phonetic;
+      document.getElementById('cPos').textContent = w.pos;
+      document.getElementById('badge').textContent = w.masteryLevel || '新词';
+      document.getElementById('badge').style.background = w.masteryLevel ? '#3b82f633' : '#334155';
+      document.getElementById('badge').style.color = w.masteryLevel ? '#60a5fa' : '#94a3b8';
+
+      // Tags
+      const tags = document.getElementById('cTags');
+      tags.innerHTML = '';
+      if (w.category) { const t=document.createElement('span'); t.className='tag'; t.textContent=Array.isArray(w.category)?w.category.join(', '):w.category; tags.appendChild(t); }
+      if (w.difficulty) { const t=document.createElement('span'); t.className='tag'; t.textContent=w.difficulty; tags.appendChild(t); }
+      if (w.reviewCount > 0) { const t=document.createElement('span'); t.className='tag'; t.textContent=`复习${w.reviewCount}次`; tags.appendChild(t); }
+
+      // Answer sections
+      const ans = document.getElementById('cAnswer');
+      ans.innerHTML = '';
+      const sections = [
+        ['Definition', fmtText(w.definition)],
+        ['Examples', fmtText(w.examples)],
+        ['Collocations', fmtText(w.collocations)],
+        ['Synonyms', fmtText(w.synonyms)],
+        ['Word Family', fmtText(w.wordFamily)],
+      ];
+      for (const [title, content] of sections) {
+        if (content) {
+          ans.innerHTML += `<div class="section"><div class="section-title">${title}</div><div class="section-body">${content}</div></div>`;
+        }
+      }
+
+      document.getElementById('cAnswer').classList.add('hidden');
+      document.getElementById('hint').classList.remove('hidden');
+      document.getElementById('card').classList.remove('revealed');
+      document.getElementById('scoreArea').classList.add('hidden');
+    }
+
+    function reveal() {
+      if (revealed) return;
+      revealed = true;
+      document.getElementById('cAnswer').classList.remove('hidden');
+      document.getElementById('hint').classList.add('hidden');
+      document.getElementById('card').classList.add('revealed');
+      document.getElementById('scoreArea').classList.remove('hidden');
+    }
+
+    async function score(s) {
+      if (!revealed) return;
+      const w = words[idx];
+      document.getElementById('scoreArea').style.opacity = '.5';
+      const r = await api('/api/review', { recordId: w.recordId, score: s, currentMasteryIndex: w.masteryIndex });
+      document.getElementById('scoreArea').style.opacity = '1';
+      results.push({ word: w.word, score: s, newLevel: r.newMasteryLevel || '' });
+      idx++;
+      showWord();
+    }
+
+    function showSummary() {
+      document.getElementById('review').classList.remove('active');
+      document.getElementById('summary').classList.add('active');
+      const avg = results.length ? (results.reduce((a,r)=>a+r.score,0)/results.length).toFixed(1) : '0';
+      document.getElementById('avgScore').textContent = `${avg} / 5`;
+      document.getElementById('avgLabel').textContent = `${results.length} 个词 · 已保存到飞书`;
+      const colors = ['#ef4444','#ea580c','#ca8a04','#22c55e','#2563eb'];
+      document.getElementById('resultList').innerHTML = results.map(r =>
+        `<div class="item"><span>${r.word}</span><span class="score" style="color:${colors[r.score-1]}">${r.score}/5 ${r.newLevel?'→ '+r.newLevel:''}</span></div>`
+      ).join('');
+    }
+
+    function goHome() {
+      document.getElementById('dashboard').style.display='';
+      document.getElementById('review').classList.remove('active');
+      document.getElementById('summary').classList.remove('active');
+      loadStats();
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>

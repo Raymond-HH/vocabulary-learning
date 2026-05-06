@@ -1,0 +1,39 @@
+{
+  "baseToken": "MkaSbEeEFaRYNQs62yOcmVXonBc",
+  "tableId": "tblNb7RBoZb9SVcp",
+  "fields": {
+    "word": "文本",
+    "definition": "definition",
+    "pos": "pos",
+    "phonetic": "phonetic",
+    "audioLink": "🔊 音频链接",
+    "examples": "examples",
+    "collocations": "collocations",
+    "synonyms": "synonyms",
+    "wordFamily": "wordFamily",
+    "usageNotes": "usageNotes",
+    "category": "category",
+    "difficulty": "difficulty",
+    "masteryLevel": "masteryLevel",
+    "lastReviewed": "lastReviewed",
+    "nextReview": "nextReview",
+    "reviewCount": "reviewCount",
+    "averageScore": "averageScore"
+  },
+  "spacedRepetition": {
+    "intervals": [1, 2, 4, 8, 15, 30, 60, 90],
+    "masteryLevels": [
+      "L0-陌生 (0%)",
+      "L1-了解 (10%)",
+      "L2-认识 (25%)",
+      "L3-熟悉 (50%)",
+      "L4-掌握 (75%)",
+      "L5-熟练 (90%)",
+      "L6-精通 (100%)"
+    ]
+  },
+  "reviewDefaults": {
+    "batchSize": 20,
+    "autoNextReview": true
+  }
+}

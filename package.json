@@ -1,0 +1,17 @@
+{
+  "name": "vocabulary-learning",
+  "version": "1.0.0",
+  "description": "Spaced repetition vocabulary learning system with Feishu Base integration",
+  "type": "module",
+  "bin": {
+    "vocab-review": "./src/review.js",
+    "vocab-import": "./src/import.js",
+    "vocab-stats": "./src/stats.js"
+  },
+  "scripts": {
+    "review": "node src/review.js",
+    "import": "node src/import.js",
+    "stats": "node src/stats.js",
+    "daily": "node src/daily-plan.js"
+  }
+}

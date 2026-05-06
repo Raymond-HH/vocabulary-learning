@@ -1,0 +1,38 @@
+{
+  "client_token": "1745000000",
+  "title": "新词自动初始化",
+  "steps": [
+    {
+      "id": "trigger_1",
+      "type": "AddRecordTrigger",
+      "title": "当新增记录时",
+      "children": { "links": [] },
+      "next": "action_1",
+      "data": {
+        "table_name": "数据表",
+        "watched_field_name": "文本"
+      }
+    },
+    {
+      "id": "action_1",
+      "type": "SetRecordAction",
+      "title": "初始化复习参数",
+      "children": { "links": [] },
+      "next": null,
+      "data": {
+        "table_name": "数据表",
+        "ref_info": { "step_id": "trigger_1" },
+        "field_values": [
+          {
+            "field_name": "masteryLevel",
+            "value": [{ "value_type": "option", "value": { "name": "L0-陌生 (0%)" } }]
+          },
+          {
+            "field_name": "reviewCount",
+            "value": [{ "value_type": "number", "value": 0 }]
+          }
+        ]
+      }
+    }
+  ]
+}
